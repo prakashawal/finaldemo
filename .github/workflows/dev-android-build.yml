@@ -1,0 +1,50 @@
+name: React Native build android
+
+on:
+  push:
+    branches: ['main']
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    env:
+      NODE_ENV: production
+    steps:
+      - name: install Linux dependencies
+        run: sudo apt-get update || true
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install npm dependencies
+        run: npm install
+
+      - name: Install java
+        uses: actions/setup-java@v3
+        with:
+          java-version: '18'
+          distribution: 'zulu'
+
+      - name: make gradlew executable
+        run: chmod +x ./android/gradlew
+
+      - name: Bundle RN Android assets
+        run: npx react-native bundle --platform android --dev false --entry-file index.js --bundle-output android/app/src/main/assets/index.android.bundle --assets-dest android/app/src/main/res
+      - name: Clean up after bundling
+        run: rm -rf ./android/app/src/main/res/drawable-* && rm -rf ./android/app/src/main/res/raw
+
+      - name: Build android APK
+        run: cd ./android && ./gradlew clean app:assembleRelease -x bundleReleaseJsAndAssets
+
+      - name: Upload artifact to Firebase App Distribution
+        uses: wzieba/Firebase-Distribution-Github-Action@v1
+        with:
+          appId: ${{secrets.FIREBASE_APP_ID}}
+          token: ${{secrets.FIREBASE_TOKEN}}
+          groups: test-team
+          file: android/app/build/outputs/apk/release/app-release.apk
