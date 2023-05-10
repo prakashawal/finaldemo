@@ -7,7 +7,7 @@ const App = (props: Props) => {
   return (
     <View style={{justifyContent: 'center', alignItems: 'center'}}>
       <Text>
-        Deploying app to firebase app distribution using Github actions
+        Deploying signed app to firebase app distribution using Github actions
       </Text>
     </View>
   );
